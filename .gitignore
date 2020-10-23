@@ -1,0 +1,4 @@
+node_modules
+# 忽视文件
+/build
+/node_modules
