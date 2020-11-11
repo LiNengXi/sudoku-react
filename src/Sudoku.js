@@ -41,26 +41,24 @@ class InputView extends React.Component {
     super(props);
 
     this.keydownHandler = this.keydownHandler.bind(this);
+    this.keyupHandler = this.keydownHandler.bind(this);
     this.changeHandler  = this.changeHandler.bind(this);
 
     this.state = {
-      value: '',
-      isReset: false
+      value: ''
     };
   }
 
   keydownHandler(e) {
-    let keyCode = e.keyCode;
+    let keyCode = e.keyCode,
+        { rowsIndex, columnIndex } = this.props;
   
     if (keyCode === 8) {
-      let { rowsIndex, columnIndex, sudoku } = this.props;
-      sudoku[rowsIndex][columnIndex] = '';
-
       this.setState({
         value: ''
       });
 
-      this.props.checkNumberCounter();
+      this.props.onUpdateSudoku(rowsIndex, columnIndex, '');
     }
   
     if (keyCode === 116) {
@@ -70,49 +68,49 @@ class InputView extends React.Component {
     if ((keyCode >= 49 && keyCode <= 57) ||
         (keyCode >= 97 && keyCode <= 105)) {
         return;
+    } else {
+      e.preventDefault();
     }
+  }
 
-    e.preventDefault();
+  keyupHandler(e) {
+    let keyCode = e.keyCode,
+        { rowsIndex, columnIndex } = this.props;
+    // 限制中文输入法
+    if (keyCode === 229) {
+      this.setState({
+        value: ''
+      });
+      this.props.onUpdateSudoku(rowsIndex, columnIndex, '');
+    }
   }
 
   changeHandler(e) {
     let ele = e.target,
         val = ele.value.trim();
 
-    let { rowsIndex, columnIndex, sudoku } = this.props;
+    let { rowsIndex, columnIndex } = this.props;
 
     val = val && parseInt(val.slice(val.length - 1));
 
-    sudoku[rowsIndex][columnIndex] = val;
-
     this.setState({
-      value: val,
-      isReset: true
+      value: val
     });
 
-    this.props.checkNumberCounter();
-
-    let isDone = sudukuCore.checkSudoku(sudoku); 
-
-    if (isDone) {
-      this.props.stopTime();
-    }
+    this.props.onUpdateSudoku(rowsIndex, columnIndex, val);
 
     ele.blur();
   }
 
-  static getDerivedStateFromProps(props, state) {
-    if (props) {
-      let val;
-      if (props.disabled || state.isReset) {
-        val = state.value;
-      } else if (!state.isReset) {
-        val = props.value;
-      }
-
+  /**
+   * 为了使每次重新开始或新的一局数独开始后
+   * input 的值都能重置为空
+   */
+  static getDerivedStateFromProps(props) {
+    if (!props.value) {
       return {
-        value: val,
-        isReset: false
+        value: '',
+        disabled: false
       }
     }
 
@@ -120,15 +118,22 @@ class InputView extends React.Component {
   }
 
   render() {
-    return <input type="number" onKeyDown={ this.keydownHandler } onChange={ this.changeHandler } value={ this.state.value } />;
+    return <input type="number" onKeyDown={ this.keydownHandler } onKeyUp={ this.keyupHandler } 
+                  onChange={ this.changeHandler } value={ this.state.value } 
+                  disabled={ this.props.disabled } />;
   }
 }
 
 class NineCell extends React.Component {
   render() {
+    let val = this.props.value,
+        element = typeof val === 'object' || !val ? 
+                  <InputView value={ val } disabled={ val.disabled } { ...this.props } /> : 
+                  val;
+
     return (
       <li className="cell">
-        { this.props.value || <InputView { ...this.props } /> }
+        { element }
       </li>
     )
   }
@@ -221,11 +226,10 @@ class Sudoku extends React.Component {
     
     this.resetSudoku   = this.resetSudoku.bind(this);
     this.restartSudoku = this.restartSudoku.bind(this);
-    this.stopTime      = this.stopTime.bind(this);
-    this.checkNumberCounter =  this.checkNumberCounter.bind(this);
+    this.gameDone      = this.gameDone.bind(this);
+    this.updateSudoku = this.updateSudoku.bind(this);
     
     this.timeUse = React.createRef();
-    this.NumbersCounter = React.createRef();
 
     let sudoku = sudukuCore.createBlankCell(sudukuCore.initializeSudoku(), DIFFICULTY);
     
@@ -233,7 +237,6 @@ class Sudoku extends React.Component {
       sudoku,
       sudokuRes: copyBlankSudoku(sudoku),
       isDone: false,
-      disabled: false,
       levels: sudukuCore.levels,
       currIndex: 0,
       difficulty: DIFFICULTY,
@@ -245,6 +248,44 @@ class Sudoku extends React.Component {
     document.title = 'sudoku';
   }
 
+  updateSudoku(rowsIndex, columnIndex, value) {
+    let sudoku = this.state.sudoku;
+    sudoku[rowsIndex][columnIndex] = {
+      value,
+      disabled: false
+    };
+
+    this.setState({
+      sudoku
+    });
+
+    let sudokuRes = [];
+    for (let i = 0; i < LEN; i++) {
+      let tmp = [];
+      for (let j = 0; j < LEN; j++) {
+        let item = sudoku[i][j];
+
+        tmp.push(typeof item === 'object' ? item.value : item);
+      }
+      sudokuRes.push(tmp);
+    }
+
+    let isDone = sudukuCore.checkSudoku(sudokuRes);
+    if (isDone) {
+      this.gameDone();
+    }
+  }
+  
+  restartSudoku() {
+    this.setState({
+      sudoku: this.state.sudokuRes,
+      sudokuRes: copyBlankSudoku(this.state.sudokuRes),
+      isDone: false,
+      currIndex: this.state.prevLevelIndex
+    });
+    this.timeUse.current.tick();
+  }
+  
   resetSudoku() {
     let sudoku = sudukuCore.createBlankCell(sudukuCore.initializeSudoku(), this.state.difficulty);
 
@@ -252,32 +293,26 @@ class Sudoku extends React.Component {
       sudoku,
       sudokuRes: copyBlankSudoku(sudoku),
       isDone: false,
-      disabled: false,
       prevLevelIndex: this.state.currIndex
     });
     this.timeUse.current.tick();
   }
 
-  restartSudoku() {
-    this.setState({
-      sudoku: this.state.sudokuRes,
-      sudokuRes: copyBlankSudoku(this.state.sudokuRes),
-      isDone: false,
-      disabled: false,
-      currIndex: this.state.prevLevelIndex
-    });
-    this.timeUse.current.tick();
-  }
-
-  checkNumberCounter() {
-    this.NumbersCounter.current.forceUpdate();
-  }
-
-  stopTime() {
+  gameDone() {
     this.timeUse.current.cancelTick();
+    let sudoku = this.state.sudoku;
+
+    for (let i = 0; i < LEN; i++) {
+      for (let j = 0; j < LEN; j++) {
+        let item = sudoku[i][j];
+        if (typeof item === 'object') {
+          item.disabled = true;
+        }
+      }
+    }
     this.setState({
       isDone: true,
-      disabled: true
+      sudoku
     });
   }
 
@@ -295,15 +330,14 @@ class Sudoku extends React.Component {
           <div className="title">sudoku</div>
 
           <div className="grids-wrap">
-            { this.state.sudoku.map((e, i) => <NineGrids key={ i } rows={ e } rowsIndex={ i } sudoku={ this.state.sudoku } 
-              stopTime={ this.stopTime } checkNumberCounter={ this.checkNumberCounter } disabled={ this.state.disabled } />) }
+            { this.state.sudoku.map((e, i) => <NineGrids key={ i } rows={ e } rowsIndex={ i } onUpdateSudoku={ this.updateSudoku }/>) }
           </div>
         </div>
 
         <ul className="levels">
           { this.state.levels.map((e, i) => <li key={ i } 
             className={ `${ this.state.currIndex === i ? 's-current' : 'n-current' }` }
-            onClick={ (event) => this.levelChoose(e, i) }>{ e.text }</li>) }
+            onClick={ () => this.levelChoose(e, i) }>{ e.text }</li>) }
         </ul>
 
         <TimeUseView ref={ this.timeUse } />

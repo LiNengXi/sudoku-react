@@ -47,6 +47,9 @@ class SudokuCore {
     return sudoku;
   }
 
+  /**
+   * 九宫格数组
+   */
   inSquareds(i, j, sudoku) {
     let x, z;
 
@@ -118,6 +121,10 @@ class SudokuCore {
     return this.renderSudoku(sudoku);
   }
 
+  /**
+   * 不会算法，通过try catch取巧完成数独的初始化生成
+   * 会算法的大佬们可以自己另行编写。
+   */
   renderSudoku(sudoku) {
     let _self = this;
 
@@ -127,7 +134,6 @@ class SudokuCore {
 
             sudoku[i][j] = num;
         });
-        
 
         return sudoku;
     } catch (e) {
@@ -135,6 +141,9 @@ class SudokuCore {
     }
   }
 
+  /**
+   * 此函数用来给数独随机留白以供玩家填空，会算法的可以自己另行编写。
+   */
   createBlankCell(sudoku, difficulty) {
     loopHandler(function (i, j) {
       if (Math.random() > difficulty) {
@@ -145,6 +154,9 @@ class SudokuCore {
     return sudoku;
   }
 
+  /**
+   * 此函数用来给玩家的结果检测是否完成，会算法的可以自己另行编写。
+   */
   checkSudoku(sudoku) {
     for (let i = 0; i < LEN; i++) {
       let rows = sudoku[i].slice();
@@ -196,6 +208,6 @@ class SudokuCore {
     return true;
   }
 
-};
+}
 
 export default SudokuCore;
