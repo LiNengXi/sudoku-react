@@ -122,8 +122,7 @@ class SudokuCore {
   }
 
   /**
-   * 不会算法，通过try catch取巧完成数独的初始化生成
-   * 会算法的大佬们可以自己另行编写。
+   * 因不会算法，通过try catch取巧完成数独的初始化生成
    */
   renderSudoku(sudoku) {
     let _self = this;
@@ -142,7 +141,7 @@ class SudokuCore {
   }
 
   /**
-   * 此函数用来给数独随机留白以供玩家填空，会算法的可以自己另行编写。
+   * 此函数用来给数独随机留白以供玩家填空。
    */
   createBlankCell(sudoku, difficulty) {
     loopHandler(function (i, j) {
@@ -155,7 +154,7 @@ class SudokuCore {
   }
 
   /**
-   * 此函数用来给玩家的结果检测是否完成，会算法的可以自己另行编写。
+   * 此函数用来给玩家的结果检测是否完成。
    */
   checkSudoku(sudoku) {
     for (let i = 0; i < LEN; i++) {
