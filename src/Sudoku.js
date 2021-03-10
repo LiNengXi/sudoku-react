@@ -8,7 +8,7 @@ const DIFFICULTY = .5;
 let sudukuCore = new SudokuCore();
 
 function copySudoku(sudoku) {
-  return sudoku.map(rows => (rows.map(ele => ele)));
+  return sudoku.map(rows => rows.map(ele => ele));
 }
 
 function initialNumbers() {
@@ -219,7 +219,7 @@ class Sudoku extends React.Component {
     });
 
     // 将用户输入数字字符串转为数字类型以作条件判断
-    let sudokuResult = sudoku.map(rows => (rows.map(ele => parseInt(ele))));
+    let sudokuResult = sudoku.map(rows => rows.map(ele => parseInt(ele)));
 
     let isDone = sudukuCore.checkSudoku(sudokuResult);
     if (isDone) {
