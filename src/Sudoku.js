@@ -3,7 +3,7 @@ import './Sudoku.css';
 import SudokuCore from './SudokuCore';
 
 const LEN = 9;
-const DIFFICULTY = .95;
+const DIFFICULTY = .5;
 
 let sudukuCore = new SudokuCore();
 
