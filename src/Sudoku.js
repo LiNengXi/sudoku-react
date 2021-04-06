@@ -192,7 +192,7 @@ class Sudoku extends React.Component {
     
     this.timeUse = React.createRef();
 
-    let sudoku = sudukuCore.createBlankCell(sudukuCore.initializeSudoku(), DIFFICULTY);
+    let sudoku = sudukuCore.createBlankCell(sudukuCore.renderSudoku(), DIFFICULTY);
     
     this.state = {
       sudoku,
@@ -238,7 +238,7 @@ class Sudoku extends React.Component {
   }
   
   resetSudoku() {
-    let sudoku = sudukuCore.createBlankCell(sudukuCore.initializeSudoku(), this.state.difficulty);
+    let sudoku = sudukuCore.createBlankCell(sudukuCore.renderSudoku(), this.state.difficulty);
 
     this.setState({
       sudoku,
